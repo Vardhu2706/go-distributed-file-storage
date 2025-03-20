@@ -4,7 +4,7 @@ import "errors"
 
 // ErrInvalidHandshake is returned if the handshake
 // between the local and remote node could not be established.
-var ErrInvalidHandshake = errors.New("Invalid handshake")
+var ErrInvalidHandshake = errors.New("invalid handshake")
 
 type HandshakeFunc func(Peer) error
 
