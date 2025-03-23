@@ -1,38 +1,51 @@
 package main
 
 import (
+	"bytes"
 	"log"
 	"time"
 
 	"github.com/Vardhu2706/go-distributed-file-storage/p2p"
 )
 
-func main(){
-
+func makeServer(listenAddr string, nodes ...string) *FileServer {
 	tcpTransportOpts := p2p.TCPTransportOpts{
-		ListenAddr: ":3000",
-		HandshakeFunc: p2p.NOPHandshakeFunc,
-		Decoder: p2p.DefaultDecoder{},
-
-		// To-Do: onPeer func
+		ListenAddr: 	listenAddr,
+		HandshakeFunc: 	p2p.NOPHandshakeFunc,
+		Decoder: 		p2p.DefaultDecoder{},
 
 	}
 	tcpTransport := p2p.NewTCPTransport(tcpTransportOpts)
 	
 	fileServerOpts := FileServerOpts{
-		StorageRoot: "3000_network",
-		PathTransformFunc: CASPathTransformFunc,
-		Transport: tcpTransport,
+		StorageRoot: 		listenAddr + "_network",
+		PathTransformFunc: 	CASPathTransformFunc,
+		Transport: 			tcpTransport,
+		BootstrapNodes: 	nodes,
 	}
 
 	s := NewFileServer(fileServerOpts)
+	tcpTransport.OnPeer = s.OnPeer
 
-	go func(){
-		time.Sleep(time.Second * 3)
-		s.Stop()
+	return  s
+}
+
+func main(){
+
+	s1 := makeServer(":3000", "")
+	s2 := makeServer(":4000", ":3000")
+	
+	go func() {
+		log.Fatal(s1.Start())
 	}()
 
-	if err := s.Start(); err != nil {
-		log.Fatal(err)
-	}
+	time.Sleep(4 * time.Second)
+
+	go s2.Start()
+	time.Sleep(4 * time.Second)
+
+	data := bytes.NewReader([]byte("My big data file here!"))
+	s2.StoreData("myPrivateData", data)
+
+	select{}
 }

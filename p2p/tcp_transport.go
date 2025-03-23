@@ -5,29 +5,34 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 )
 
 // TCPPeer represents the remote node over a TCP established connection.
 type TCPPeer struct {
 
-	// conn is the underlying connection of the peer
-	conn net.Conn
+	// The underlying connection of the peer.
+	// Which in this case is a TCP connection.
+	net.Conn 
 
 	// If we dial and retrieve a conn => outbound == True
 	// If we accept and retrieve a conn => outbound == False
 	outbound bool
+
+	Wg *sync.WaitGroup
 }
 
 func NewTCPPeer(conn net.Conn, outbound bool) *TCPPeer {
 	return &TCPPeer{
-		conn: conn,
+		Conn: conn,
 		outbound: outbound,
+		Wg: &sync.WaitGroup{},
 	}
 }
 
-// Close implements the Peer interface.
-func (p *TCPPeer) Close() error {
-	return p.conn.Close()
+func (p *TCPPeer) Send(b []byte) error {
+	_, err := p.Conn.Write(b)
+	return err
 }
 
 type TCPTransportOpts struct {
@@ -54,6 +59,18 @@ func NewTCPTransport(opts TCPTransportOpts) *TCPTransport {
 func (t *TCPTransport) Consume () <- chan RPC {
 	return t.rpcch
 }
+
+// Dial implements the transport interface.
+func (t *TCPTransport) Dial(addr string) error {
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		return err
+	}
+
+	go t.handleConn(conn, true)
+	return nil
+}
+
 
 // Close implements the Transport interface
 func (t *TCPTransport) Close() error {
@@ -84,13 +101,11 @@ func (t *TCPTransport) startAcceptLoop() {
 		if err != nil {
 			fmt.Printf("TCP accept error: %s\n", err)
 		}
-
-		fmt.Printf("New incoming connection %+v\n", conn)
-		go t.handleConn(conn)
+		go t.handleConn(conn, false)
 	}
 }
 
-func (t *TCPTransport) handleConn(conn net.Conn) {
+func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 
 	var err error
 
@@ -99,7 +114,7 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 		conn.Close()
 	}()
 
-	peer := NewTCPPeer(conn, true)
+	peer := NewTCPPeer(conn, outbound)
 
 	if err = t.HandshakeFunc(peer); err != nil {
 		return
@@ -121,7 +136,14 @@ func (t *TCPTransport) handleConn(conn net.Conn) {
 			return
 		}
 
-		rpc.From = conn.RemoteAddr()
+		rpc.From = conn.RemoteAddr().String()
+		peer.Wg.Add(1)
+		fmt.Println("Waiting till stream is done ...")
+
+		t.rpcch <- rpc
+
+		peer.Wg.Wait()
+		fmt.Println("Stream done, resuming normal read loop ...")
 		t.rpcch <- rpc
 	}
 }
