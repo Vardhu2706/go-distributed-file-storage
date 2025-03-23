@@ -126,7 +126,7 @@ func (s *Store) WriteDecrypt(encKey []byte, id string, key string, r io.Reader) 
 	if err != nil {
 		return 0, err
 	}
-	n, err := copyDecrypt(encKey, f, f)
+	n, err := copyDecrypt(encKey, r, f)
 	return int64(n), err
 }
 

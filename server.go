@@ -35,7 +35,7 @@ type FileServer struct {
 func NewFileServer(opts FileServerOpts) *FileServer {
 	storeOpts := StoreOpts{
 		Root: opts.StorageRoot,
-		PathTransformFunc: opts. PathTransformFunc,
+		PathTransformFunc: opts.PathTransformFunc,
 	}
 
 	if len(opts.ID) == 0 {

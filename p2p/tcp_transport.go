@@ -10,13 +10,11 @@ import (
 
 // TCPPeer represents the remote node over a TCP established connection.
 type TCPPeer struct {
-
-	// The underlying connection of the peer.
-	// Which in this case is a TCP connection.
-	net.Conn 
-
-	// If we dial and retrieve a conn => outbound == True
-	// If we accept and retrieve a conn => outbound == False
+	// The underlying connection of the peer. Which in this case
+	// is a TCP connection.
+	net.Conn
+	// if we dial and retrieve a conn => outbound == true
+	// if we accept and retrieve a conn => outbound == false
 	outbound bool
 
 	wg *sync.WaitGroup
@@ -141,7 +139,7 @@ func (t *TCPTransport) handleConn(conn net.Conn, outbound bool) {
 	
 	for {
 		rpc := RPC{}
-		err := t.Decoder.Decode(conn, &rpc)
+		err = t.Decoder.Decode(conn, &rpc)
 
 		if err != nil {
 			fmt.Printf("TCP Read Error: %s\n", err)

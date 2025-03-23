@@ -1,11 +1,13 @@
 package p2p
 
-import "errors"
-
-// ErrInvalidHandshake is returned if the handshake
-// between the local and remote node could not be established.
-var ErrInvalidHandshake = errors.New("invalid handshake")
-
+// HandshakeFunc defines the signature for a handshake function
+// used during peer connection setup. You can customize this to
+// perform any kind of peer authentication or negotiation logic.
 type HandshakeFunc func(Peer) error
 
-func NOPHandshakeFunc (Peer) error { return nil }
+// NOPHandshakeFunc is a no-op handshake function.
+// It simply accepts all connections without doing anything.
+// Useful for testing or when no handshake validation is required.
+func NOPHandshakeFunc(Peer) error {
+	return nil
+}
