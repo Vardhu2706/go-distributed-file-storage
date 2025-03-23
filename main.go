@@ -1,6 +1,10 @@
 package main
 
 import (
+
+	// "fmt"
+	// "io/ioutil"
+
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -46,9 +50,10 @@ func main(){
 	time.Sleep(2 * time.Second)
 
 	// data := bytes.NewReader([]byte("My big data file here!"))
-	// s2.Store("myprivatedata", data)
+	// s2.Store("coolPicture.jpg", data)
+	// time.Sleep(5 * time.Millisecond)
 
-	r, err := s2.Get("myprivatedata")
+	r, err := s2.Get("coolPicture.jpg")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,5 +65,4 @@ func main(){
 
 	fmt.Println(string(b))
 
-	select{}
 }
